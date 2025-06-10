@@ -2,16 +2,16 @@
 
 # Check if argument is supplied
 if [ -z "$1" ]; then
-  echo "Usage: $0 <query-string>"
+  echo "Usage: $0 <query-string...>"
   exit 1
 fi
 
-# URL-encode the argument
-query=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$1")
+# Join all arguments into a single string and URL-encode it
+query=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(' '.join(sys.argv[1:])))" "$@")
 
 # Construct the URL
 url="https://web.prsmusa.com/bible/search?q=${query}&json=true"
 
 echo "$url"
 
-curl -s "$url" | jq . 
+curl -s "$url" | jq .
