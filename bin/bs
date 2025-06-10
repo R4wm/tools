@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Check if argument is supplied
+if [ -z "$1" ]; then
+  echo "Usage: $0 <query-string>"
+  exit 1
+fi
+
+# URL-encode the argument
+query=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$1")
+
+# Construct the URL
+url="https://web.prsmusa.com/bible/search?q=${query}&json=true"
+
+echo "$url"
