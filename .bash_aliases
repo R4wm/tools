@@ -12,7 +12,6 @@ alias l='ls -CF'
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-alias bast='ssh -4 ecdc\\rmintz@bast001.ccb.edgecastcloud.net'
 alias clipit='xclip -selection c'
 alias kc='kubectl --namespace=secc-prod '
 alias rm_tilde='find . -iname "*~" -exec rm {} \;'
@@ -31,11 +30,8 @@ alias show_green='ks get pods | grep green'
 alias show_blue='ks get pods | grep blue'
 alias connect_soundcore='bluetoothctl connect B4:9A:95:B4:ED:48'
 alias connect_bose='bluetoothctl connect C8:7B:23:89:E2:09'
-# alias link_to_cac='autossh -M 20005 -N -R 20002:localhost:22 r4wm@mintz5.duckdns.org'
 alias blue_0='ks exec -it clickhouse-blue-0 /bin/bash'
 alias green_0='ks exec -it clickhouse-green-0 /bin/bash'
 alias start_hurl_docker="docker container start $hurl_docker"
 alias run_hurl="docker exec $hurl_docker hurl "
-alias get_ch_prod='curl -s https://chapi.bassfish.ecsvc.net/admin/production | jq .'
-alias prsm='ssh -4 r4wm@prsmusa.com'
-alias kleo='kubectl -nleo-staging '
+alias prsm='ssh -4 prsmusa.com'
