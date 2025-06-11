@@ -17,29 +17,32 @@ tools/
 ### Bible Search Tools
 
 #### `bs` (Bash Version)
-Original bash script for searching Bible verses using the PRSMUSA Bible API.
+Original bash script for searching Bible verses by text content using the PRSMUSA Bible API.
 
 **Usage:**
 ```bash
 ./bin/bs "love one another"
-./bin/bs "John 3:16"
+./bin/bs "faith hope love"
+./bin/bs "blessed are the meek"
 ```
 
 **Features:**
+- Searches for verses containing specific text/phrases
 - URL-encodes search queries
 - Makes HTTP requests to Bible search API
 - Pretty-prints JSON responses using `jq`
 
 #### `bsg` (Go Version)
-Modern Go port of the Bible search tool with enhanced features.
+Modern Go port of the Bible search tool with enhanced features for searching verse content.
 
 **Usage:**
 ```bash
-# Basic search
+# Basic text search
 ./bin/bsg "love one another"
+./bin/bsg "peace be with you"
 
 # Verbose mode with debug logging
-./bin/bsg -v "John 3:16"
+./bin/bsg -v "faith hope love"
 
 # Show help
 ./bin/bsg -h
