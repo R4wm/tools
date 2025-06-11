@@ -140,6 +140,28 @@ cp bin/* ~/bin/
 chmod +x ~/bin/*
 ```
 
+### Setting Up PATH
+
+To use the tools from anywhere without specifying full paths, add `~/bin` to your PATH:
+
+```bash
+# Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Or for immediate use in current session:
+export PATH="$HOME/bin:$PATH"
+```
+
+**After setting up PATH, you can use tools directly:**
+```bash
+# Instead of ./bin/bsg "search text"
+bsg "search text"
+
+# Instead of ~/bin/rm_tilde.sh
+rm_tilde.sh
+```
+
 ## 📋 Makefile Targets
 
 | Target | Description |
@@ -217,10 +239,11 @@ See [LICENSE](LICENSE) file for details.
 
 ## 💡 Tips
 
-- Add `~/bin` to your `PATH` for easy access to installed tools
-- Use `bsg -v` for debugging Bible search queries
+- **Add `~/bin` to your PATH** for easy access to installed tools from anywhere
+- Use `bsg -v` for debugging Bible search queries  
 - Run `make install` after updates to sync latest versions
 - Check individual tool help with `-h` flag where available
+- **Verify PATH setup**: Run `echo $PATH` to confirm `~/bin` is included
 
 ---
 
