@@ -1,4 +1,9 @@
 # Git branch and dirty marker
+
+# Source ~/.bash_aliases if it exists
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
 parse_git_branch() {
     git rev-parse --is-inside-work-tree &>/dev/null || return
     local branch
