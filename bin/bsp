@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+import sys
+import requests
+import json
+import os
+
+# --- Configuration ---
+# Please replace this with your desired API endpoint.
+# This script currently uses bible-api.com, which works well for scripture
+# references (e.g., "John 3:16"), but may not support free-text searching.
+API_BASE_URL = "https://bible-api.com/"
+# Default translation can be changed here (e.g., 'kjv', 'web', 'bbe')
+TRANSLATION = "kjv"
+# -------------------
+
+def search_bible(query):
+    """
+    Searches for a bible passage using the configured API.
+    """
+    # URL-encode the query to handle spaces and special characters
+    encoded_query = requests.utils.quote(query)
+    url = f"{API_BASE_URL}{encoded_query}?translation={TRANSLATION}"
+
+    print(f"Querying: {url}", file=sys.stderr)
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an exception for 4xx or 5xx status codes
+
+        try:
+            data = response.json()
+            # Pretty-print the JSON response
+            print(json.dumps(data, indent=2))
+        except json.JSONDecodeError:
+            # Handle cases where the response is not valid JSON
+            print("Error: The API response was not in a valid JSON format.", file=sys.stderr)
+            print("--- Response Text ---", file=sys.stderr)
+            print(response.text, file=sys.stderr)
+            sys.exit(1)
+
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}", file=sys.stderr)
+        if response.text:
+            print(f"Response from server: {response.text}", file=sys.stderr)
+        sys.exit(1)
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while making the request: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print(f"Usage: {os.path.basename(__file__)} <search_query>", file=sys.stderr)
+        print("Example: bsp \"John 3:16\"", file=sys.stderr)
+        sys.exit(1)
+
+    # Join all command-line arguments into a single string
+    search_query = " ".join(sys.argv[1:])
+    search_bible(search_query)

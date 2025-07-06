@@ -8,6 +8,7 @@ INSTALL_DIR = $(HOME)/bin
 TARGET = bs
 SOURCE = $(SRC_DIR)/$(TARGET).go
 BINARY = $(BIN_DIR)/bsg
+SCRIPTS = $(filter-out $(BINARY), $(wildcard $(BIN_DIR)/*))
 
 # Default target
 all: $(BINARY)
@@ -25,8 +26,8 @@ clean:
 	rm -f $(BINARY)
 
 # Install binaries to ~/bin
-install: | $(INSTALL_DIR)
-	cp -r $(BIN_DIR)/* $(INSTALL_DIR)/
+install: all | $(INSTALL_DIR)
+	cp $(BINARY) $(SCRIPTS) $(INSTALL_DIR)/
 	@echo "Installed all binaries from $(BIN_DIR) to $(INSTALL_DIR)"
 
 # Create install directory if it doesn't exist

@@ -47,7 +47,7 @@ func main() {
 	log.Printf("URL-encoded query: %s", encodedQuery)
 
 	// Construct the URL
-	apiURL := fmt.Sprintf("https://web.prsmusa.com/bible/search?q=%s&json=true", encodedQuery)
+	apiURL := fmt.Sprintf("https://prsmusa.com/bible/search?q=%s&json=true", encodedQuery)
 	log.Printf("API URL: %s", apiURL)
 
 	if *verbose {
