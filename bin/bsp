@@ -4,6 +4,16 @@ import requests
 import json
 import os
 
+# --- Pygments (for colorization) ---
+try:
+    from pygments import highlight
+    from pygments.lexers import JsonLexer
+    from pygments.formatters import TerminalFormatter
+    PYGMENTS_AVAILABLE = True
+except ImportError:
+    PYGMENTS_AVAILABLE = False
+# -----------------------------------
+
 # --- Configuration ---
 # Please replace this with your desired API endpoint.
 # This script currently uses bible-api.com, which works well for scripture
@@ -28,7 +38,11 @@ def search_bible(query):
         try:
             data = response.json()
             # Pretty-print the JSON response
-            print(json.dumps(data, indent=2))
+            pretty_json = json.dumps(data, indent=2)
+            if PYGMENTS_AVAILABLE:
+                print(highlight(pretty_json, JsonLexer(), TerminalFormatter()))
+            else:
+                print(pretty_json)
         except json.JSONDecodeError:
             # Handle cases where the response is not valid JSON
             print("Error: The API response was not in a valid JSON format.", file=sys.stderr)
