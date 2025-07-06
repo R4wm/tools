@@ -9,8 +9,6 @@ import os
 # This script currently uses bible-api.com, which works well for scripture
 # references (e.g., "John 3:16"), but may not support free-text searching.
 API_BASE_URL = "https://prsmusa.com/bible/search"
-# Default translation can be changed here (e.g., 'kjv', 'web', 'bbe')
-TRANSLATION = "kjv"
 # -------------------
 
 def search_bible(query):
@@ -19,7 +17,7 @@ def search_bible(query):
     """
     # URL-encode the query to handle spaces and special characters
     encoded_query = requests.utils.quote(query)
-    url = f"{API_BASE_URL}?q={encoded_query}&translation={TRANSLATION}&json=true"
+    url = f"{API_BASE_URL}?q={encoded_query}&json=true"
 
     print(f"Querying: {url}", file=sys.stderr)
 
