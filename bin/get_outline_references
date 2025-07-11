@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+  echo "Usage: $0 <url>"
+  exit 1
+fi
+
+curl -s "$1" | pdftotext - - | while read -r line; do
+  # Find all potential references in the line
+  echo "$line" | grep -Eo '([A-Za-z]+[0-9]?\s+)?[0-9]+:[0-9]+(-[0-9]+)?' | while read -r ref; do
+    # Check if the reference starts with a book name
+    if [[ "$ref" =~ ^[A-Za-z]+ ]]; then
+      last_book=$(echo "$ref" | awk '{print $1}')
+      echo "$ref"
+    else
+      # If not, prepend the last known book name
+      if [ -n "$last_book" ]; then
+        echo "$last_book $ref"
+      fi
+    fi
+  done
+done
