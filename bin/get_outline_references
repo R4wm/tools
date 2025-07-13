@@ -7,10 +7,10 @@ fi
 
 curl -s "$1" | pdftotext - - | while read -r line; do
   # Find all potential references in the line
-  echo "$line" | grep -Eo '([A-Za-z]+[0-9]?\s+)?[0-9]+:[0-9]+(-[0-9]+)?' | while read -r ref; do
-    # Check if the reference starts with a book name
-    if [[ "$ref" =~ ^[A-Za-z]+ ]]; then
-      last_book=$(echo "$ref" | awk '{print $1}')
+  echo "$line" | grep -oP '\b(?:(?:[1-3] )?[A-Z][a-zA-Z]*(?: [A-Z][a-zA-Z]*)? )?[0-9]+:[0-9]+(?:-[0-9]+)?\b' | while read -r ref; do
+    # Check if the reference contains a book name
+    if [[ "$ref" =~ [A-Za-z] ]]; then
+      last_book=$(echo "$ref" | sed -E 's/\s[0-9]+:[0-9]+.*//')
       echo "$ref"
     else
       # If not, prepend the last known book name
