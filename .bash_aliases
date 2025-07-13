@@ -35,3 +35,4 @@ alias green_0='ks exec -it clickhouse-green-0 /bin/bash'
 alias start_hurl_docker="docker container start $hurl_docker"
 alias run_hurl="docker exec $hurl_docker hurl "
 alias prsm='ssh -4 prsmusa.com'
+alias ghs='gh copilot suggest'

@@ -44,3 +44,4 @@ export PS1='\[\e[0;36m\]┌───────────────[ \[\e[0
 '│ \[\e[0;35m\]Status:\[\e[0m\] \[\e[0;35m\]$(parse_git_status_summary)\n'\
 '│ \[\e[0;32m\]Time:  \[\e[0m\] \[\e[0;32m\]$(prompt_datetime)\n'\
 '\[\e[0;36m\]└─\[\e[0;32m\]\\$\[\e[0m\] '
+
