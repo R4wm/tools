@@ -64,7 +64,7 @@ MONITOR_LOG="/tmp/upload_monitor_$$.log"
 
 (
     LAST_SIZE=0
-    SAMPLE_INTERVAL=5
+    SAMPLE_INTERVAL=1
     while true; do
         sleep $SAMPLE_INTERVAL
 
@@ -151,7 +151,7 @@ fi
 # Display speed samples over time
 if [ "${#SPEED_SAMPLES[@]}" -gt 0 ]; then
     echo "========================================"
-    echo "Speed Samples (every 5 seconds):"
+    echo "Speed Samples (every second):"
     echo "========================================"
     echo "Time (s) | Speed (MB/s) | Graph"
     echo "---------|--------------|----------------------------------------"
