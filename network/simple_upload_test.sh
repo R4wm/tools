@@ -22,12 +22,11 @@ echo ""
 # Upload with time measurement
 echo "[2/4] Uploading to prsmusa.com:/tmp via SCP..."
 echo "Method: SCP (Secure Copy Protocol over SSH)"
-echo "Starting upload..."
 echo ""
 START_TIME=$(date +%s.%N)
 
-# Upload while capturing output (show real-time progress AND save for parsing)
-SCP_OUTPUT=$(scp "$TEST_FILE" r4wm@prsmusa.com:/tmp/speedtest_1gb.bin 2>&1 | tee /dev/tty)
+# Upload with real-time progress (don't capture, just let it show)
+scp "$TEST_FILE" r4wm@prsmusa.com:/tmp/speedtest_1gb.bin
 
 END_TIME=$(date +%s.%N)
 echo ""
@@ -36,9 +35,6 @@ echo ""
 DURATION=$(awk "BEGIN {printf \"%.2f\", $END_TIME - $START_TIME}")
 AVG_SPEED_MBPS=$(awk "BEGIN {printf \"%.2f\", ($FILE_SIZE * 8) / ($DURATION * 1000000)}")
 AVG_SPEED_MBps=$(awk "BEGIN {printf \"%.2f\", $FILE_SIZE / ($DURATION * 1024 * 1024)}")
-
-# Try to extract peak speed from SCP output (if available)
-PEAK_SPEED=$(echo "$SCP_OUTPUT" | grep -oP '\d+\.\d+MB/s' | head -1 || echo "")
 
 echo "✓ Upload complete!"
 echo ""
@@ -52,10 +48,6 @@ echo ""
 echo "Average Speed:"
 echo "  ${AVG_SPEED_MBPS} Mbps (megabits per second)"
 echo "  ${AVG_SPEED_MBps} MB/s (megabytes per second)"
-if [ -n "$PEAK_SPEED" ]; then
-echo ""
-echo "Peak Speed:          $PEAK_SPEED (as reported by SCP)"
-fi
 echo ""
 
 # Delete local file
