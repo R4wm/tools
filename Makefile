@@ -10,7 +10,7 @@ BINARIES = $(addprefix $(BIN_DIR)/, $(TARGETS))
 SCRIPTS = $(filter-out $(BINARIES), $(wildcard $(BIN_DIR)/*))
 
 # Default target
-all: $(BINARIES)
+all: $(BINARIES) jira
 
 # Build bsg
 $(BIN_DIR)/bsg: $(SRC_DIR)/bsg.go | $(BIN_DIR)
@@ -57,6 +57,12 @@ vet:
 # Build only uptest
 uptest: $(BIN_DIR)/uptest
 
+# Copy jira scripts to bin directory
+jira: | $(BIN_DIR)
+	cp jira/jira_update.py $(BIN_DIR)/jira_update.py
+	chmod +x $(BIN_DIR)/jira_update.py
+	@echo "Copied jira_update.py to $(BIN_DIR)"
+
 # Docker targets
 docker-build:
 	docker build -f network/Dockerfile -t uptest:latest .
@@ -75,6 +81,7 @@ help:
 	@echo "Available targets:"
 	@echo "  all          - Build all binaries (default)"
 	@echo "  uptest       - Build uptest only"
+	@echo "  jira         - Copy jira scripts to bin/"
 	@echo "  clean        - Remove built binaries"
 	@echo "  install      - Install all binaries from ./bin to ~/bin"
 	@echo "  deps         - Download Go module dependencies"
@@ -88,4 +95,4 @@ help:
 	@echo "  help         - Show this help message"
 
 # Declare phony targets
-.PHONY: all clean install deps test fmt vet uptest docker-build docker-run docker-stop docker-logs help
+.PHONY: all clean install deps test fmt vet uptest jira docker-build docker-run docker-stop docker-logs help
