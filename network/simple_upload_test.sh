@@ -26,8 +26,8 @@ echo "Starting upload..."
 echo ""
 START_TIME=$(date +%s.%N)
 
-# Capture SCP output to parse speed
-SCP_OUTPUT=$(scp "$TEST_FILE" r4wm@prsmusa.com:/tmp/speedtest_1gb.bin 2>&1)
+# Upload while capturing output (show real-time progress AND save for parsing)
+SCP_OUTPUT=$(scp "$TEST_FILE" r4wm@prsmusa.com:/tmp/speedtest_1gb.bin 2>&1 | tee /dev/tty)
 
 END_TIME=$(date +%s.%N)
 echo ""
