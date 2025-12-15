@@ -1,0 +1,43 @@
+# uptest configuration file
+# Copy to ~/.config/uptest/config.yaml or /etc/uptest/config.yaml
+
+# Remote configuration (RECOMMENDED)
+# Note: Client ID is auto-generated from machine fingerprint (IP + hostname + OS)
+remote_config:
+  enabled: true  # Fetch config from central.prsmusa.com
+  url: https://central.prsmusa.com/uptest/config  # Will append ?client_id={id}
+  cache_path: ~/.cache/uptest/remote-config.json
+  timeout: 10s
+
+# Local configuration (FALLBACK - used if remote fetch fails)
+# These settings are overridden by remote config if available
+
+# Test configuration
+method: http
+server: central.prsmusa.com  # Overridden by remote config
+port: 443                     # Overridden by remote config
+data_size: 1073741824         # Overridden by remote config (1GB)
+timeout: 5m                   # Overridden by remote config
+
+# Redis configuration
+redis:
+  enabled: false              # Overridden by remote config
+  addr: localhost:6379
+  db: 0
+  prefix: speedtest
+
+# GitHub configuration
+github:
+  enabled: false              # Overridden by remote config
+  repo_path: ~/speedtest-results
+  repo_url: git@github.com:username/speedtest-results.git
+  branch: main
+  auto_push: true             # Overridden by remote config
+  include_summary: true       # Overridden by remote config
+  update_readme: true         # Overridden by remote config
+
+# Output configuration
+output:
+  format: json
+  show_progress: true
+  verbose: false
