@@ -5,8 +5,35 @@ echo "Simple Upload Speed Test to prsmusa.com"
 echo "========================================"
 echo ""
 
+# Check network path with MTR
+echo "[1/5] Checking network path with MTR..."
+TARGET_HOST="prsmusa.com"
+MTR_FILE="/tmp/mtr_result_$$.txt"
+
+# Run MTR with 10 cycles
+mtr -r -c 10 "$TARGET_HOST" > "$MTR_FILE" 2>&1
+
+if [ $? -eq 0 ]; then
+    echo ""
+    cat "$MTR_FILE"
+    echo ""
+
+    # Extract summary info
+    HOP_COUNT=$(grep -c "^\s*[0-9]" "$MTR_FILE" || echo "unknown")
+    FINAL_HOP=$(tail -1 "$MTR_FILE" | awk '{print $2}')
+
+    echo "Network Path Summary:"
+    echo "  Total hops:      $HOP_COUNT"
+    echo "  Destination:     $FINAL_HOP"
+    echo "  MTR report saved to: $MTR_FILE"
+    echo ""
+else
+    echo "MTR not available or failed. Install with: sudo pacman -S mtr"
+    echo ""
+fi
+
 # Generate 1GB test file
-echo "[1/4] Generating 1GB test file..."
+echo "[2/5] Generating 1GB test file..."
 TEST_FILE="/tmp/speedtest_1gb.bin"
 dd if=/dev/urandom of="$TEST_FILE" bs=1M count=1024 status=progress 2>&1
 echo ""
@@ -20,7 +47,7 @@ echo "File size: ${FILE_SIZE_MB} MB"
 echo ""
 
 # Upload with time measurement and speed tracking
-echo "[2/4] Uploading to prsmusa.com:/tmp via SCP..."
+echo "[3/5] Uploading to prsmusa.com:/tmp via SCP..."
 echo "Method: SCP (Secure Copy Protocol over SSH)"
 echo ""
 
@@ -156,13 +183,13 @@ fi
 
 
 # Delete local file
-echo "[3/4] Deleting local test file..."
+echo "[4/5] Deleting local test file..."
 rm -f "$TEST_FILE"
 echo "✓ Deleted $TEST_FILE"
 echo ""
 
 # Delete remote file
-echo "[4/4] Deleting remote test file..."
+echo "[5/5] Deleting remote test file..."
 ssh r4wm@prsmusa.com "rm -f /tmp/speedtest_1gb.bin"
 echo "✓ Deleted remote file"
 echo ""
@@ -170,3 +197,12 @@ echo ""
 echo "========================================"
 echo "Test Complete!"
 echo "========================================"
+echo ""
+echo "Files generated:"
+if [ -f "$MTR_FILE" ]; then
+    echo "  - MTR report: $MTR_FILE"
+fi
+if [ -f "$CSV_FILE" ]; then
+    echo "  - Speed data: $CSV_FILE"
+fi
+echo ""
