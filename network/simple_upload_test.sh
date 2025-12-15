@@ -170,7 +170,7 @@ if [ "${#SPEED_SAMPLES[@]}" -gt 0 ]; then
 
     # Save data to CSV for external graphing
     CSV_FILE="/tmp/upload_speed_data.csv"
-    echo "timestamp,speed_mbps" > "$CSV_FILE"
+    echo "timestamp_seconds,speed_mb_per_sec" > "$CSV_FILE"
     for i in "${!TIMESTAMPS[@]}"; do
         timestamp="${TIMESTAMPS[$i]}"
         speed="${SPEED_SAMPLES[$i]}"
