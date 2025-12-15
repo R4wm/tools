@@ -177,7 +177,39 @@ if [ "${#SPEED_SAMPLES[@]}" -gt 0 ]; then
         echo "${timestamp},${speed}" >> "$CSV_FILE"
     done
     echo "Speed data saved to: $CSV_FILE"
-    echo "Use this file to create graphs with gnuplot, Excel, or Python"
+    echo ""
+
+    # Generate graph with gnuplot if available
+    if command -v gnuplot &> /dev/null; then
+        PNG_FILE="/tmp/upload_speed_graph.png"
+        gnuplot <<EOF
+set terminal pngcairo size 1200,600 enhanced font 'Arial,12'
+set output '$PNG_FILE'
+set title 'Upload Speed Over Time to prsmusa.com'
+set xlabel 'Time (seconds)'
+set ylabel 'Speed (MB/s)'
+set grid
+set key top right
+set datafile separator ','
+plot '$CSV_FILE' using 1:2 with linespoints linewidth 2 pointtype 7 pointsize 0.5 title 'Upload Speed', \
+     '' using 1:2 smooth bezier linewidth 2 linetype rgb "#ff0000" title 'Trend'
+EOF
+        if [ -f "$PNG_FILE" ]; then
+            echo "Graph saved to: $PNG_FILE"
+            echo ""
+
+            # Try to open the graph automatically
+            if command -v xdg-open &> /dev/null; then
+                xdg-open "$PNG_FILE" 2>/dev/null &
+                echo "Opening graph in default viewer..."
+            elif command -v feh &> /dev/null; then
+                feh "$PNG_FILE" 2>/dev/null &
+                echo "Opening graph with feh..."
+            fi
+        fi
+    else
+        echo "Install gnuplot to generate graphs: sudo pacman -S gnuplot"
+    fi
     echo ""
 fi
 
@@ -203,6 +235,10 @@ if [ -f "$MTR_FILE" ]; then
     echo "  - MTR report: $MTR_FILE"
 fi
 if [ -f "$CSV_FILE" ]; then
-    echo "  - Speed data: $CSV_FILE"
+    echo "  - Speed data CSV: $CSV_FILE"
+fi
+PNG_FILE="/tmp/upload_speed_graph.png"
+if [ -f "$PNG_FILE" ]; then
+    echo "  - Speed graph: $PNG_FILE"
 fi
 echo ""
