@@ -173,3 +173,8 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 bin/bsg
+
+# cloudflare-ddns: built binary and any filled-in secret config (NEVER commit the token)
+bin/cloudflare-ddns
+config.env
+*.secret.env

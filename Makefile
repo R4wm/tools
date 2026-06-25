@@ -5,7 +5,7 @@ GO = go
 SRC_DIR = src
 BIN_DIR = bin
 INSTALL_DIR = $(HOME)/bin
-TARGETS = bsg uptest
+TARGETS = bsg uptest cloudflare-ddns
 BINARIES = $(addprefix $(BIN_DIR)/, $(TARGETS))
 SCRIPTS = $(filter-out $(BINARIES), $(wildcard $(BIN_DIR)/*))
 
@@ -20,6 +20,11 @@ $(BIN_DIR)/bsg: $(SRC_DIR)/bsg.go | $(BIN_DIR)
 $(BIN_DIR)/uptest: $(SRC_DIR)/uptest.go | $(BIN_DIR)
 	$(GO) build -o $@ $<
 	@echo "Built uptest successfully"
+
+# Build cloudflare-ddns (note: source uses underscore, binary uses dash)
+$(BIN_DIR)/cloudflare-ddns: $(SRC_DIR)/cloudflare_ddns.go | $(BIN_DIR)
+	$(GO) build -o $@ $<
+	@echo "Built cloudflare-ddns successfully"
 
 # Create bin directory if it doesn't exist
 $(BIN_DIR):
@@ -56,6 +61,9 @@ vet:
 
 # Build only uptest
 uptest: $(BIN_DIR)/uptest
+
+# Build only cloudflare-ddns
+cloudflare-ddns: $(BIN_DIR)/cloudflare-ddns
 
 # Copy jira scripts to bin directory
 jira: | $(BIN_DIR)
@@ -95,4 +103,4 @@ help:
 	@echo "  help         - Show this help message"
 
 # Declare phony targets
-.PHONY: all clean install deps test fmt vet uptest jira docker-build docker-run docker-stop docker-logs help
+.PHONY: all clean install deps test fmt vet uptest cloudflare-ddns jira docker-build docker-run docker-stop docker-logs help
