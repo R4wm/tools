@@ -107,7 +107,9 @@ uptest --timeout 2m --progress
 
 ### Server Setup
 
-See `server/http_receiver.go` for a simple HTTP server to receive uploads (coming soon).
+The Go server in [`server/`](server/) provides the upload receiver plus a fixed-duration
+download stream. See [`server/README.md`](server/README.md) for build, systemd, and Nginx
+deployment instructions.
 
 ### Docker Deployment
 
@@ -153,6 +155,7 @@ uptest (client)
 central.prsmusa.com (server)
 ├── /uptest/config - Config API (per-client)
 ├── /upload_test - Upload endpoint
+├── /download_test - Fixed-duration download endpoint
 └── Client registry with metadata
 ```
 

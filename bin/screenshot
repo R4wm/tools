@@ -1,0 +1,28 @@
+#!/bin/bash
+# screenshot: drag-select a region, save it to ~/Pictures, and copy it to the
+# clipboard. Bound to Alt+p in the Awesome config.
+#
+# Usage:
+#   screenshot           # select a region
+#   screenshot -f        # whole screen (full)
+#
+# Override the save directory with SCREENSHOT_DIR.
+set -euo pipefail
+
+dir="${SCREENSHOT_DIR:-$HOME/Pictures}"
+mkdir -p "$dir"
+file="$dir/screenshot-$(date +%Y%m%d-%H%M%S).png"
+
+if [[ "${1:-}" == "-f" || "${1:-}" == "--full" ]]; then
+    maim "$file"
+else
+    # -s/--select drags a region (via slop); abort cleanly if cancelled.
+    maim --select "$file" || { echo "screenshot cancelled" >&2; exit 1; }
+fi
+
+# Put the PNG on the clipboard so it can be pasted into chats/editors.
+xclip -selection clipboard -target image/png -in "$file"
+
+if command -v notify-send >/dev/null 2>&1; then
+    notify-send "Screenshot" "Saved to $file and copied to clipboard"
+fi

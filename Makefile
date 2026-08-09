@@ -5,7 +5,7 @@ GO = go
 SRC_DIR = src
 BIN_DIR = bin
 INSTALL_DIR = $(HOME)/bin
-TARGETS = bsg uptest cloudflare-ddns
+TARGETS = bsg uptest cloudflare-ddns speedtest-server
 BINARIES = $(addprefix $(BIN_DIR)/, $(TARGETS))
 SCRIPTS = $(filter-out $(BINARIES), $(wildcard $(BIN_DIR)/*))
 
@@ -25,6 +25,11 @@ $(BIN_DIR)/uptest: $(SRC_DIR)/uptest.go | $(BIN_DIR)
 $(BIN_DIR)/cloudflare-ddns: $(SRC_DIR)/cloudflare_ddns.go | $(BIN_DIR)
 	$(GO) build -o $@ $<
 	@echo "Built cloudflare-ddns successfully"
+
+# Build the HTTP speed test server
+$(BIN_DIR)/speedtest-server: network/server/http_receiver.go | $(BIN_DIR)
+	$(GO) build -o $@ $<
+	@echo "Built speedtest-server successfully"
 
 # Create bin directory if it doesn't exist
 $(BIN_DIR):
@@ -62,6 +67,9 @@ vet:
 # Build only uptest
 uptest: $(BIN_DIR)/uptest
 
+# Build only the HTTP speed test server
+speedtest-server: $(BIN_DIR)/speedtest-server
+
 # Build only cloudflare-ddns
 cloudflare-ddns: $(BIN_DIR)/cloudflare-ddns
 
@@ -89,6 +97,7 @@ help:
 	@echo "Available targets:"
 	@echo "  all          - Build all binaries (default)"
 	@echo "  uptest       - Build uptest only"
+	@echo "  speedtest-server - Build the HTTP speed test server"
 	@echo "  jira         - Copy jira scripts to bin/"
 	@echo "  clean        - Remove built binaries"
 	@echo "  install      - Install all binaries from ./bin to ~/bin"
@@ -103,4 +112,4 @@ help:
 	@echo "  help         - Show this help message"
 
 # Declare phony targets
-.PHONY: all clean install deps test fmt vet uptest cloudflare-ddns jira docker-build docker-run docker-stop docker-logs help
+.PHONY: all clean install deps test fmt vet uptest speedtest-server cloudflare-ddns jira docker-build docker-run docker-stop docker-logs help

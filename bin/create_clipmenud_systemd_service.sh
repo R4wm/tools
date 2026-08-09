@@ -1,4 +1,4 @@
-d#!/bin/bash
+#!/bin/bash
 
 # Create a systemd user service for clipmenud
 SERVICE_FILE="$HOME/.config/systemd/user/clipmenud.service"

@@ -3,132 +3,188 @@ package main
 import (
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
 )
 
-type UploadResult struct {
+const (
+	defaultPort             = 8080
+	defaultListenAddress    = "127.0.0.1"
+	defaultDownloadDuration = 10 * time.Second
+	defaultBufferSize       = 64 * 1024
+	defaultMaxDownloads     = 20
+)
+
+type server struct {
+	downloadDuration time.Duration
+	downloadBuffer   []byte
+	downloadSlots    chan struct{}
+}
+
+type uploadResult struct {
 	BytesReceived   int64   `json:"bytes_received"`
 	DurationSeconds float64 `json:"duration_seconds"`
 	SpeedMbps       float64 `json:"speed_mbps"`
 	SpeedMBps       float64 `json:"speed_mbytes_per_sec"`
 }
 
-func handleUpload(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+func newServer(downloadDuration time.Duration, bufferSize, maxDownloads int) (*server, error) {
+	if downloadDuration <= 0 {
+		return nil, errors.New("download duration must be positive")
+	}
+	if bufferSize <= 0 {
+		return nil, errors.New("download buffer size must be positive")
+	}
+	if maxDownloads <= 0 {
+		return nil, errors.New("maximum concurrent downloads must be positive")
+	}
+
+	buffer := make([]byte, bufferSize)
+	if _, err := rand.Read(buffer); err != nil {
+		return nil, fmt.Errorf("create download buffer: %w", err)
+	}
+
+	return &server{
+		downloadDuration: downloadDuration,
+		downloadBuffer:   buffer,
+		downloadSlots:    make(chan struct{}, maxDownloads),
+	}, nil
+}
+
+func (s *server) handleUpload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	log.Printf("Upload request from %s", r.RemoteAddr)
-
 	start := time.Now()
-
-	// Discard uploaded data efficiently
 	bytesReceived, err := io.Copy(io.Discard, r.Body)
 	if err != nil {
-		log.Printf("Error reading request body: %v", err)
-		http.Error(w, "Upload failed", http.StatusInternalServerError)
+		log.Printf("upload from %s failed: %v", r.RemoteAddr, err)
+		http.Error(w, "upload failed", http.StatusInternalServerError)
 		return
 	}
 
 	duration := time.Since(start).Seconds()
-	speedBytesPerSec := float64(bytesReceived) / duration
-	speedMbps := (speedBytesPerSec * 8) / (1000 * 1000)
-	speedMBps := speedBytesPerSec / (1024 * 1024)
-
-	result := UploadResult{
-		BytesReceived:   bytesReceived,
-		DurationSeconds: duration,
-		SpeedMbps:       speedMbps,
-		SpeedMBps:       speedMBps,
+	result := uploadResult{BytesReceived: bytesReceived, DurationSeconds: duration}
+	if duration > 0 {
+		result.SpeedMbps = (float64(bytesReceived) * 8) / duration / 1_000_000
+		result.SpeedMBps = float64(bytesReceived) / duration / (1024 * 1024)
 	}
-
-	log.Printf("Upload completed: %.2f MB in %.2f seconds (%.2f Mbps, %.2f MB/s)",
-		float64(bytesReceived)/(1024*1024), duration, speedMbps, speedMBps)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		log.Printf("write upload response to %s: %v", r.RemoteAddr, err)
+	}
 }
 
-func handleDownload(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+// handleDownload streams arbitrary bytes for the configured duration. It does
+// not set Content-Length, so net/http uses a streaming response. A client must
+// count the bytes it reads; query parameters are deliberately ignored.
+func (s *server) handleDownload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Get size from query parameter
-	sizeStr := r.URL.Query().Get("size")
-	if sizeStr == "" {
-		sizeStr = "104857600" // Default 100MB
-	}
-
-	size, err := strconv.ParseInt(sizeStr, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid size parameter", http.StatusBadRequest)
+	select {
+	case s.downloadSlots <- struct{}{}:
+		defer func() { <-s.downloadSlots }()
+	default:
+		w.Header().Set("Retry-After", "1")
+		http.Error(w, "download test capacity reached", http.StatusServiceUnavailable)
 		return
 	}
 
-	// Limit maximum size to 10GB for safety
-	if size > 10*1024*1024*1024 {
-		http.Error(w, "Size too large (max 10GB)", http.StatusBadRequest)
-		return
-	}
-
-	log.Printf("Download request from %s for %d bytes (%.2f MB)",
-		r.RemoteAddr, size, float64(size)/(1024*1024))
-
+	// Keep intermediaries from caching, compressing, or buffering the test
+	// payload. Compression would make the byte count unsuitable for a speed test.
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", size))
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Encoding", "identity")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Accel-Buffering", "no")
 
-	// Stream random data
-	written, err := io.CopyN(w, rand.Reader, size)
-	if err != nil {
-		log.Printf("Error sending data: %v (sent %d bytes)", err, written)
-		return
+	deadline := time.Now().Add(s.downloadDuration)
+	controller := http.NewResponseController(w)
+	if err := controller.SetWriteDeadline(deadline); err != nil && !errors.Is(err, http.ErrNotSupported) {
+		log.Printf("set download write deadline for %s: %v", r.RemoteAddr, err)
 	}
 
-	log.Printf("Download completed: sent %.2f MB to %s",
-		float64(written)/(1024*1024), r.RemoteAddr)
+	var bytesWritten int64
+	for time.Now().Before(deadline) {
+		written, err := w.Write(s.downloadBuffer)
+		bytesWritten += int64(written)
+		if err != nil {
+			if r.Context().Err() == nil {
+				log.Printf("download to %s stopped after %d bytes: %v", r.RemoteAddr, bytesWritten, err)
+			}
+			return
+		}
+		if err := controller.Flush(); err != nil && !errors.Is(err, http.ErrNotSupported) {
+			log.Printf("flush download to %s: %v", r.RemoteAddr, err)
+			return
+		}
+	}
+
+	log.Printf("download to %s completed: %d bytes in %s", r.RemoteAddr, bytesWritten, s.downloadDuration)
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("pong\n"))
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.Header().Set("Allow", "GET, HEAD")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if r.Method != http.MethodHead {
+		_, _ = io.WriteString(w, "pong\n")
+	}
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK\n"))
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.Header().Set("Allow", "GET, HEAD")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if r.Method != http.MethodHead {
+		_, _ = io.WriteString(w, "OK\n")
+	}
 }
 
 func main() {
-	port := flag.Int("port", 8080, "Server port")
+	port := flag.Int("port", defaultPort, "TCP port to listen on")
+	listenAddress := flag.String("listen-address", defaultListenAddress, "IP address to listen on")
+	downloadDuration := flag.Duration("download-duration", defaultDownloadDuration, "duration of each download stream")
+	bufferSize := flag.Int("download-buffer-size", defaultBufferSize, "reused payload buffer size in bytes")
+	maxDownloads := flag.Int("max-downloads", defaultMaxDownloads, "maximum simultaneous download streams")
 	flag.Parse()
 
-	http.HandleFunc("/upload_test", handleUpload)
-	http.HandleFunc("/download_test", handleDownload)
-	http.HandleFunc("/ping", handlePing)
-	http.HandleFunc("/health", handleHealth)
+	s, err := newServer(*downloadDuration, *bufferSize, *maxDownloads)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	addr := fmt.Sprintf(":%d", *port)
-	log.Printf("HTTP speed test server listening on %s", addr)
-	log.Printf("Endpoints:")
-	log.Printf("  POST /upload_test        - Upload speed test endpoint")
-	log.Printf("  GET  /download_test?size - Download speed test endpoint")
-	log.Printf("  HEAD /ping               - Latency test endpoint")
-	log.Printf("  GET  /health             - Health check")
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /upload_test", s.handleUpload)
+	mux.HandleFunc("GET /download_test", s.handleDownload)
+	mux.HandleFunc("GET /ping", handlePing)
+	mux.HandleFunc("HEAD /ping", handlePing)
+	mux.HandleFunc("GET /health", handleHealth)
+	mux.HandleFunc("HEAD /health", handleHealth)
 
-	if err := http.ListenAndServe(addr, nil); err != nil {
-		log.Fatalf("Server failed: %v", err)
+	address := net.JoinHostPort(*listenAddress, strconv.Itoa(*port))
+	log.Printf("speed test server listening on %s (download duration: %s, maximum streams: %d)", address, *downloadDuration, *maxDownloads)
+	if err := http.ListenAndServe(address, mux); err != nil {
+		log.Fatalf("server failed: %v", err)
 	}
 }

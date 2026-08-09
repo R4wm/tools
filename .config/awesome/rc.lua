@@ -101,7 +101,7 @@ local function run_once(cmd_arr)
     end
 end
 
-run_once({ "urxvtd", "unclutter -root" })
+run_once({ "urxvtd", "unclutter -root", "clipmenud" })
 
 -- This function implements the XDG autostart specification
 --[[
@@ -137,7 +137,7 @@ local altkey       = "Mod1"
 local terminal     = "kitty"
 local vi_focus     = false -- vi-like client focus
 local cycle_prev   = true  -- cycle with only the previously focused client or all
-local editor       = os.getenv("EDITOR") or "nvim"
+local editor       = os.getenv("EDITOR") or "vim"
 local browser      = "firefox"
 
 awful.util.terminal = terminal
