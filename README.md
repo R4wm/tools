@@ -2,6 +2,13 @@
 
 A collection of useful command-line tools and utilities for daily development and system administration tasks.
 
+## Private infrastructure documentation
+
+Operational documentation for hosts, network topology, tunnels, and recovery
+procedures is maintained separately in the private
+[`r4wm/infra-docs`](https://github.com/r4wm/infra-docs) repository. Do not add
+infrastructure details or credentials to this repository.
+
 ## 📁 Repository Structure
 
 ```
