@@ -1,0 +1,20 @@
+[Unit]
+Description=Grace Ambassadors current outline redirect
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+ExecStart=/usr/bin/python3 /usr/local/lib/gabf-outline/gabf_outline_redirect.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/run
+
+[Install]
+WantedBy=multi-user.target
